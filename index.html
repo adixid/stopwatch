@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Timer game</title>
+  <style>
+    *,*::before,*::after {
+      box-sizing:border-box;
+      margin:0;
+      padding:0
+      }
+
+    body {
+      background-color: rgb(20, 17, 31);
+      display:flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    /*mobile resolution*/
+    .playarea {
+      min-height: 100dvh;
+      width: 100%;
+      border-radius: 15px;
+      background-color: rgb(32, 29, 43);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-evenly;
+      color: rgb(199, 199, 199);
+      font-family: 'Courier New', Courier, monospace;
+    }  
+
+    .game-info {
+      display: flex;
+      flex-direction: column;
+      width:80%;
+   
+    }
+
+    .game-title {
+      color: rgb(211, 211, 211);
+      font-size: 20px;
+      display:flex;
+      flex:2;
+      justify-content: center;
+      margin-top:10px;
+      font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    }
+
+    #info {
+      margin: 10px;
+      display: flex;
+      flex-direction: row;
+    }
+
+    #round-number {
+      flex: 2;
+      display:flex;
+      flex-direction: row;
+    }
+
+    #total-difference {
+      flex:2;
+      display: flex;
+      flex-direction: row;
+      justify-content: right;
+    }
+
+    #target-time {
+      margin-top:5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: rgb(39, 39, 112);
+      flex:4;
+      width:80%;
+      font-family: 'Courier New', Courier, monospace;
+      color: white;
+      border-radius: 15px;
+    }
+    #target-time-name {
+      font-size: 16px;
+      color: white;
+    }
+
+    #target-time-number {
+      color: rgb(216, 55, 55);
+      font-size: 46px;
+      font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    }
+
+    #timer {
+      margin-top:20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgb(31, 31, 48);
+      flex:4;
+      width:80%;
+      font-size: 46px;
+      font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+      color: white;
+      border-radius: 15px;
+      border: 1px gray solid;
+    }
+
+    #result {
+      display: flex;
+      flex:5;
+      width:80%;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: rgb(216, 55, 55);
+    }
+
+    #button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgb(119, 119, 119);
+      flex:5;
+      width:100%;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 20px;
+      color: white;
+      border-radius: 15px;
+    }
+    
+    #button:hover {
+      background-color: rgb(80, 90, 64);
+      color: yellow;
+      cursor: pointer;
+    }
+
+    /*desktop resolution*/
+    @media (min-width: 1280px) {
+      .playarea {
+        height: 600px;
+        width: 400px;
+        min-height: unset;
+      }      
+    }
+
+  </style>
+</head>
+<body>
+  <div class="playarea">
+    <div class="game-info">
+      <div class="game-title">
+        <img src="images/stopwatch.png" alt="stopwatch">
+      </div>
+      <div id="info">
+        <div id="round-number">
+          <div id="round-number-name">Round: </div>
+          <div id="round-number-no">1</div>
+        </div>
+        <div id="total-difference">
+          <div id="total-difference-name">Total diff: </div>
+          <div id="total-difference-no">0.00 </div>
+        </div>
+      </div>
+    </div>
+    <div id="target-time">
+      <div id="target-time-name">TARGET TIME</div>
+      <div id="target-time-number">2.55s</div>
+    </div>
+    <div id="timer">0.00</div>
+    <div id="result">&nbsp;</div>
+    <div id="button" onclick="toggleTimer()">START</div>
+  </div>
+  
+  <script>
+    
+    let timerRunning=false;
+    let interval;
+
+    let totalDiff = 0.00; 
+    let roundNumber = 1;
+    const maxRounds = 3;
+
+    let hun = 0
+    let sec = 0;
+
+    let targetHun; let targetSec;
+
+    let tempTarget, tempStopped, tempDiff;
+    
+    let gameState = "paused";
+
+    if (targetHun < 10 ) {
+      document.getElementById("target-time-number").innerHTML = `${targetSec}.0${targetHun}`;
+    } else {
+      document.getElementById("target-time-number").innerHTML = `${targetSec}.${targetHun}`;
+    }
+
+    function generateTargetTime() {
+      targetSec = Math.floor(Math.random() * (2 ) ) + 1;
+      targetHun = Math.floor(Math.random() * 100);
+
+      tempTarget = Number(`${targetSec}.${targetHun.toString().padStart(2, "0")}`);
+
+      if (targetHun < 10 ) {
+      document.getElementById("target-time-number").innerHTML = `${targetSec}.0${targetHun}`;
+      } else {
+      document.getElementById("target-time-number").innerHTML = `${targetSec}.${targetHun}`;
+      }
+    }
+
+    generateTargetTime();
+    document.getElementById("round-number-no").textContent = `${roundNumber}/${maxRounds}`;
+
+    function myTimer() {
+
+      if (timerRunning === true) {
+       
+        if (hun < 99) {
+          hun++;
+          if (hun < 10) {
+            document.getElementById("timer").innerHTML = `${sec}.0${hun}`;
+          } else {
+            document.getElementById("timer").innerHTML = `${sec}.${hun}`;
+          }
+        } else {
+          hun = 0;
+          sec++;
+          document.getElementById("timer").innerHTML = `${sec}.0${hun}`;
+          }
+      }
+    }
+
+    function toggleTimer() {
+      if (roundNumber === 1) {
+        totalDiff = 0.00; 
+        document.getElementById("total-difference-no").textContent =`${totalDiff}`;
+      }
+
+      if (roundNumber <= maxRounds) {
+      
+        //start timer
+        if (gameState === "paused") {     
+          timerRunning = true;
+          interval = setInterval(myTimer, 10);
+          
+          gameState = "running";
+          document.getElementById("button").textContent = "STOP";
+
+      // stop timer
+        } else if (gameState === "running") {   
+          timerRunning = false;
+          clearInterval(interval);
+
+          tempStopped = Number(`${sec}.${hun.toString().padStart(2, "0")}`);
+
+          tempDiff = Math.abs(tempStopped - tempTarget);
+          document.getElementById("result").textContent =`missed by ${tempDiff.toFixed(2)}`;
+
+          totalDiff = Number((totalDiff + tempDiff).toFixed(2));
+          document.getElementById("total-difference-no").textContent =`${totalDiff}`;
+          roundNumber += 1;
+          gameState = "stopped";
+          if (roundNumber === maxRounds+1) {
+            document.getElementById("button").textContent ="GAME R£SULT";
+          } else {
+            document.getElementById("button").textContent ="NEXT ROUND";
+          }
+          
+
+      //start next round
+        } else if (gameState === "stopped") {   
+        //  document.getElementById("round-number-no").textContent = roundNumber;
+
+          document.getElementById("round-number-no").textContent = `${roundNumber}/${maxRounds}`;
+
+          sec = 0; hun = 0;
+          document.getElementById("timer").textContent = "0.00";
+
+          document.getElementById("result").innerHTML = "&nbsp;";
+
+          generateTargetTime();
+          gameState = "paused";
+          document.getElementById("button").textContent = "START";
+        }
+      } else {
+      //new game
+        document.getElementById("result").textContent = `Total difference: ${totalDiff.toFixed(2)}`;
+        roundNumber = 1;
+        document.getElementById("button").textContent = "START NEW GAME";
+      }
+    }
+
+  </script>
+</body>
+</html>
